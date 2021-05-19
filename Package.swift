@@ -11,12 +11,12 @@ let package = Package(
             targets: ["UpdateCache"]),
     ],
     dependencies: [
-        .package(name: "CacheKit", url: "https://github.com/BJBeecher/CacheKit.git", .upToNextMajor(from: "1.0.1"))
+        .package(name: "Cache", url: "https://github.com/BJBeecher/Cache.git", .upToNextMajor(from: "1.0.1"))
     ],
     targets: [
         .target(
             name: "UpdateCache",
-            dependencies: ["CacheKit"]),
+            dependencies: ["Cache"]),
         .testTarget(
             name: "UpdateCacheTests",
             dependencies: ["UpdateCache"]),

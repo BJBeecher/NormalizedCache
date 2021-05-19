@@ -5,7 +5,7 @@
 //  Created by BJ Beecher on 5/16/21.
 //
 
-import CacheKit
+import Cache
 
 public protocol StoreInterface : AnyObject {
     subscript(key: Int) -> Any? { get set }

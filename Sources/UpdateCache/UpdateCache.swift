@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import CacheKit
+import Cache
 
 public final class UpdateCache {
     
