@@ -6,7 +6,7 @@
 //
 
 import XCTest
-@testable import UpdateCache
+@testable import NormalizedCache
 
 class MockComposerStore : ObjectStoreInterface {
     

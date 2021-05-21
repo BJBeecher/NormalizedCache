@@ -8,9 +8,10 @@
 import Cache
 
 public protocol StoreInterface : AnyObject {
-    subscript(key: Int) -> Any? { get set }
+    associatedtype Key : Hashable
+    subscript(key: Key) -> Any? { get set }
 }
 
 // conformance
 
-extension Cache : StoreInterface where Key == Int, Value == Any {}
+extension Cache : StoreInterface where Value == Any {}
