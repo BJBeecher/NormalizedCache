@@ -8,7 +8,7 @@
 import Foundation
 
 protocol ComposerInterface {
-    func decompose(_ object: Any) -> Any
+    @discardableResult func decompose(_ object: Any) -> Any
     func recompose(_ object: Any) throws -> Any
 }
 
@@ -25,6 +25,7 @@ final class Composer : ComposerInterface {
 // public API
 
 extension Composer {
+    @discardableResult
     func decompose(_ object: Any) -> Any {
         if let object = object as? [String: Any] {
             let flattenedObject = object.mapValues(decompose)

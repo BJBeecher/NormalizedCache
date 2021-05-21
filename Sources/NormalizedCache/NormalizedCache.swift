@@ -48,4 +48,8 @@ public extension NormalizedCache {
             }
         }
     }
+    
+    func update(_ object: Any) {
+        composer.decompose(object)
+    }
 }
