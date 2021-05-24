@@ -11,13 +11,9 @@ import Cache
 public final class NormalizedCache<Store: StoreInterface> {
     
     let store : Store
-    
     let composer : ComposerInterface
     
-    init(
-        store: Store,
-        composer: ComposerInterface
-    ) {
+    init(store: Store, composer: ComposerInterface) {
         self.store = store
         self.composer = composer
     }
@@ -51,5 +47,22 @@ public extension NormalizedCache {
     
     func update(_ object: Any) {
         composer.decompose(object)
+    }
+}
+
+// data API
+
+public extension NormalizedCache {
+    func insert(_ data: Data, for key: Store.Key) throws {
+        let json = try JSONSerialization.jsonObject(with: data, options: [])
+        insert(json, for: key)
+    }
+    
+    func data(for key: Store.Key) -> Data? {
+        if let json = value(for: key), let data = try? JSONSerialization.data(withJSONObject: json, options: []) {
+            return data
+        } else {
+            return nil
+        }
     }
 }
