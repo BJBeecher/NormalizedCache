@@ -17,6 +17,10 @@ public final class NormalizedCache<Store: StoreInterface> {
         self.store = store
         self.composer = composer
     }
+    
+    public convenience init<Key: Hashable>() where Store == Cache<Key, Any> {
+        self.init(store: Cache<Key, Any>(), composer: Composer())
+    }
 }
 
 // public API
