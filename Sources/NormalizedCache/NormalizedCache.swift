@@ -18,7 +18,7 @@ public final class NormalizedCache<Key: Hashable & Codable> {
         self.composer = composer
     }
     
-    convenience init() {
+    public convenience init() {
         self.init(store: .init(), composer: Composer())
     }
 }
