@@ -10,9 +10,9 @@ import XCTest
 
 class MockComposerStore : ObjectStoreInterface {
     
-    var objects = [ObjectKey : ObjectValue]()
+    var objects = [String : ObjectValue]()
     
-    subscript(key: ObjectKey) -> ObjectValue? {
+    subscript(key: String) -> ObjectValue? {
         get {
             objects[key]
         }
@@ -27,60 +27,81 @@ class ComposerTests: XCTestCase {
     let store = MockComposerStore()
     lazy var composer = Composer(store: store)
     
-    func object(id: UUID) -> [String: Any]  {
+    func object(id: String) -> [String : JSONObject]  {
         ["id": id, "name": "Phillip"]
     }
     
     func testKeyMethod(){
-        let id = UUID()
+        // given
+        let id = UUID().uuidString
+        
+        // when
         let key = composer.key(for: object(id: id))
         
-        assert(id == key?.id)
+        // then
+        assert(key == "~>\(id)")
     }
     
-    func testSaveMethod(){
-        let id = UUID()
-        let key = ObjectKey(id: id)
+    func testSaveMethod() throws {
+        // given
+        let id = UUID().uuidString
         let json = object(id: id)
+        let value = try ObjectValue(object: json)
+        let key = "~>\(id)"
         
-        composer.save(json, for: key)
+        // when
+        try composer.save(json, for: key)
         
-        assert(store.objects[key]?.value.json["name"] as? String == json["name"] as? String)
+        // then
+        XCTAssertEqual(store.objects[key], value)
     }
     
-    func testDecomposeObject(){
-        let id = UUID()
-        let key = ObjectKey(id: id)
-        let value = ["id": id, "name": "Joe"] as [String:Any]
+    func testDecomposeObject() throws {
+        // given
+        let id = UUID().uuidString
+        let object = object(id: id)
+        let key = composer.key(for: object)
         
-        let decomposed = composer.decompose(value)
+        // when
+        let decomposed = try composer.decompose(object)
         
-        assert(store.objects[key]?.value.json["name"] as? String == value["name"] as? String)
-        assert(decomposed as? ObjectKey == key)
+        // then
+        XCTAssertEqual(decomposed as? String, key)
     }
     
-    func testDecomposeObjectNoKey(){
-        let value = ["name":"Joe", "car":"Prius"] as [String:Any]
-        let decomposed = composer.decompose(value)
+    func testDecomposeObjectNoKey() throws {
+        // given
+        let value = ["name":"Joe", "car":"Prius"] as JSONObject
         
-        assert((decomposed as? [String:Any])?["car"] as? String == value["car"] as? String)
+        // when
+        let decomposed = try composer.decompose(value)
+        
+        // then
+        XCTAssertEqual(decomposed as? [String : String], value as? [String : String])
     }
     
-    func testDecomposeArray(){
-        let value = ["Tommy", "Matt", "Katie"]
-        let decomposed = composer.decompose(value)
+    func testDecomposeArray() throws {
+        // given
+        let value = ["Tommy", "Matt", "Katie"] as [JSONObject]
         
-        assert(value == decomposed as? [String])
+        // when
+        let decomposed = try composer.decompose(value)
+        
+        // then
+        XCTAssertEqual(decomposed as? [String], value as? [String])
     }
     
-    func testDecomposeArrayWithObject(){
-        let id = UUID()
-        let key = ObjectKey(id: id)
-        let object = ["id":id, "name":"Brian"] as [String:Any]
-        let array = ["5", object, "6"] as [Any]
-        let decomposed = composer.decompose(array)
+    func testDecomposeArrayWithObject() throws {
+        // given
+        let id = UUID().uuidString
+        let object = ["id":id, "name":"Brian"] as [String : JSONObject]
+        let array = [object] as JSONObject
+        let key = composer.key(for: object)!
         
-        assert((decomposed as? [Any])?[1] as? ObjectKey == key)
-        assert(store.objects[key]?.value.json["name"] as? String == object["name"] as? String)
+        // when
+        let decomposed = try composer.decompose(array)
+        
+        // then
+        XCTAssertEqual(decomposed as? [String], [key])
     }
 }

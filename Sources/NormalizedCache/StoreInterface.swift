@@ -6,12 +6,13 @@
 //
 
 import Cache
+import Foundation
 
-public protocol StoreInterface : AnyObject {
-    associatedtype Key : Hashable
-    subscript(key: Key) -> Any? { get set }
+public protocol StoreInterface : AnyObject, Codable {
+    associatedtype Key : Hashable, Codable
+    subscript(key: Key) -> Data? { get set }
 }
 
 // conformance
 
-extension Cache : StoreInterface where Value == Any {}
+extension Cache : StoreInterface where Key : Codable, Value == Data {}

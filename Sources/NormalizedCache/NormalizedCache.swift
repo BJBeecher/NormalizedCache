@@ -18,39 +18,29 @@ public final class NormalizedCache<Store: StoreInterface> {
         self.composer = composer
     }
     
-    public convenience init<Key: Hashable>() where Store == Cache<Key, Any> {
-        self.init(store: Cache<Key, Any>(), composer: Composer())
+    public convenience init<Key: Hashable>() where Store == Cache<Key, Data> {
+        self.init(store: Cache<Key, Data>(), composer: Composer())
     }
 }
 
-// public API
+// json API
 
 public extension NormalizedCache {
-    func insert(_ value: Any, for key: Store.Key) {
-        let decomposedValue = composer.decompose(value)
-        store[key] = decomposedValue
+    func insert(_ json: JSONObject, for key: Store.Key) throws {
+        let decomposedValue = try composer.decompose(json)
+        let data = try JSONSerialization.data(withJSONObject: decomposedValue, options: [])
+        store[key] = data
     }
     
-    func value(for key: Store.Key) -> Any? {
-        if let decomposedValue = store[key], let value = try? composer.recompose(decomposedValue) {
-            return value
-        } else {
-            return nil
-        }
+    func json(for key: Store.Key) throws -> JSONObject? {
+        guard let decomposedValue = store[key] else { return nil }
+        let json = try JSONSerialization.jsonObject(with: decomposedValue, options: []) as! JSONObject
+        let value = try composer.recompose(json)
+        return value
     }
     
-    subscript(key: Store.Key) -> Any? {
-        get {
-            value(for: key)
-        } set {
-            if let newValue = newValue {
-                insert(newValue, for: key)
-            }
-        }
-    }
-    
-    func update(_ object: Any) {
-        composer.decompose(object)
+    func update(with json: JSONObject) throws {
+        try composer.decompose(json)
     }
 }
 
@@ -58,15 +48,33 @@ public extension NormalizedCache {
 
 public extension NormalizedCache {
     func insert(_ data: Data, for key: Store.Key) throws {
-        let json = try JSONSerialization.jsonObject(with: data, options: [])
-        insert(json, for: key)
+        let json = try JSONSerialization.jsonObject(with: data, options: []) as! JSONObject
+        try insert(json, for: key)
     }
     
-    func data(for key: Store.Key) -> Data? {
-        if let json = value(for: key), let data = try? JSONSerialization.data(withJSONObject: json, options: []) {
-            return data
-        } else {
-            return nil
-        }
+    func data(for key: Store.Key) throws -> Data? {
+        guard let json = try json(for: key) else { return nil }
+        let data = try JSONSerialization.data(withJSONObject: json, options: [])
+        return data
+    }
+    
+    func update(with data: Data) throws {
+        let json = try JSONSerialization.jsonObject(with: data, options: []) as! JSONObject
+        try update(with: json)
+    }
+}
+
+// codable API
+
+public extension NormalizedCache {
+    func insert<Object: Codable>(_ object: Object, forKey key: Store.Key) throws {
+        let data = try JSONEncoder().encode(object)
+        try insert(data, for: key)
+    }
+    
+    func object<Object: Codable>(forKey key: Store.Key) throws -> Object? {
+        guard let data = try data(for: key) else { return nil }
+        let object = try JSONDecoder().decode(Object.self, from: data)
+        return object
     }
 }

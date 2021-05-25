@@ -8,8 +8,8 @@
 import Foundation
 
 protocol ComposerInterface {
-    @discardableResult func decompose(_ object: Any) -> Any
-    func recompose(_ object: Any) throws -> Any
+    @discardableResult func decompose(_ object: JSONObject) throws -> JSONObject
+    func recompose(_ object: JSONObject) throws -> JSONObject
 }
 
 // conformance
@@ -17,7 +17,7 @@ protocol ComposerInterface {
 final class Composer : ComposerInterface {
     var store : ObjectStoreInterface
     
-    init(store : ObjectStoreInterface = [ObjectKey : ObjectValue]()){
+    init(store : ObjectStoreInterface = [String : ObjectValue]()){
         self.store = store
     }
 }
@@ -26,62 +26,60 @@ final class Composer : ComposerInterface {
 
 extension Composer {
     @discardableResult
-    func decompose(_ object: Any) -> Any {
-        if let object = object as? [String: Any] {
-            let flattenedObject = object.mapValues(decompose)
+    func decompose(_ json: JSONObject) throws -> JSONObject {
+        if let object = json as? [String : JSONObject] {
+            let flattenedObject = try object.mapValues(decompose)
             
             if let key = key(for: object) {
-                save(flattenedObject, for: key)
+                try save(flattenedObject, for: key)
                 return key
             } else {
                 return flattenedObject
             }
-        } else if let objects = object as? [Any] {
-            return objects.map(decompose)
+        } else if let objects = json as? [JSONObject] {
+            return try objects.map(decompose)
         }
         
-        return object // Primitive
+        return json // Primitive
     }
     
-    func recompose(_ object: Any) throws -> Any {
-        if let object = object as? [String: Any] {
-            return try object.reduce(into: [String: Any]()) { result, item in
+    func recompose(_ json: JSONObject) throws -> JSONObject {
+        if let object = json as? [String: JSONObject] {
+            return try object.reduce(into: [:]) { result, item in
                 result[item.key] = try recompose(item.value)
             }
-        } else if let objects = object as? [Any] {
+        } else if let objects = json as? [JSONObject] {
             return try objects.map(recompose)
-        } else if let objectRef = object as? ObjectKey {
-            if let thinObject = store[objectRef] {
-                return try recompose(thinObject)
+        } else if let objectRef = json as? String, objectRef.contains("~>") {
+            if let value = store[objectRef], let json = try value.getJSON() {
+                return try recompose(json)
             } else {
                 throw Failure.recomposition
             }
         }
         
-        return object
+        return json
     }
 }
 
 // helper API
 
 extension Composer {
-    func key(for object: [String: Any]) -> ObjectKey? {
+    func key(for object: [String: JSONObject]) -> String? {
         let value = object["id"]
         
-        if let uuidString = value as? String, let id = UUID(uuidString: uuidString) {
-            return .init(id: id)
-        } else if let id = value as? UUID {
-            return .init(id: id)
+        if let string = value as? String, UUID(uuidString: string) != nil {
+            return "~>\(string)"
         } else {
             return nil
         }
     }
     
-    func save(_ object: [String: Any], for key: ObjectKey) {
+    func save(_ object: [String : JSONObject], for key: String) throws {
         if let current = store[key] {
-            current.update(with: object)
+            try current.update(with: object)
         } else {
-            store[key] = .init(json: object)
+            store[key] = try ObjectValue(object: object)
         }
     }
 }

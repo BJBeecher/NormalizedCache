@@ -8,9 +8,9 @@
 import Foundation
 
 protocol ObjectStoreInterface {
-    subscript(key: ObjectKey) -> ObjectValue? { get set }
+    subscript(key: String) -> ObjectValue? { get set }
 }
 
 // conformance
 
-extension Dictionary : ObjectStoreInterface where Key == ObjectKey, Value == ObjectValue {}
+extension Dictionary : ObjectStoreInterface where Key == String, Value == ObjectValue {}

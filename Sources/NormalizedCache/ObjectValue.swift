@@ -7,31 +7,57 @@
 
 import Foundation
 
-final class ObjectValue {
+final class ObjectValue : Codable {
+    
     var value : Value
     
     init(value: Value) {
         self.value = value
     }
     
-    convenience init(json: [String : Any]){
-        self.init(value: .init(json: json))
+    convenience init(object: [String : Any]) throws {
+        let data = try JSONSerialization.data(withJSONObject: object, options: [])
+        self.init(value: .init(data: data))
     }
 }
 
 // API
 
 extension ObjectValue {
-    func update(with json: [String : Any]){
-        value.json.merge(json) { old, new in new }
+    func getJSON() throws -> [String : JSONObject]? {
+        try JSONSerialization.jsonObject(with: value.data, options: []) as? [String : JSONObject]
+    }
+    
+    func update(with newObject: [String : JSONObject]) throws {
+        if let object = try getJSON() {
+            let merged = object.merging(newObject) { old, new in new }
+            let data = try JSONSerialization.data(withJSONObject: merged, options: [])
+            value.data = data
+        } else {
+            let data = try JSONSerialization.data(withJSONObject: newObject, options: [])
+            value.data = data
+        }
     }
 }
 
 // types
 
 extension ObjectValue {
-    struct Value {
-        var json : [String : Any]
-        let createdDt = Date()
+    struct Value : Codable, Equatable {
+        var data : Data
+        let createdDt : Date
+        
+        init(data: Data){
+            self.data = data
+            self.createdDt = Date()
+        }
+    }
+}
+
+// conformance
+
+extension ObjectValue : Equatable {
+    static func == (lhs: ObjectValue, rhs: ObjectValue) -> Bool {
+        lhs.value.data == rhs.value.data
     }
 }

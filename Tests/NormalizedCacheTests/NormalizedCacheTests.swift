@@ -1,11 +1,10 @@
     import XCTest
     @testable import NormalizedCache
     
-    final class MockEntryStore<Key: Hashable> : StoreInterface {
+    final class MockEntryStore<Key: Hashable & Codable> : StoreInterface {
+        var entries = [Key : Data]()
         
-        var entries = [Key : Any]()
-        
-        subscript(key: Key) -> Any? {
+        subscript(key: Key) -> Data? {
             get {
                 entries[key]
             }
@@ -16,11 +15,11 @@
     }
     
     final class MockComposer : ComposerInterface {
-        func decompose(_ object: Any) -> Any {
+        func decompose(_ object: JSONObject) -> JSONObject {
             return object
         }
         
-        func recompose(_ object: Any) throws -> Any {
+        func recompose(_ object: JSONObject) throws -> JSONObject {
             return object
         }
     }
@@ -38,53 +37,42 @@
         
         lazy var cache = NormalizedCache(store: store, composer: composer)
         
-        func testPrimitiveInsert() {
+        func testDictionaryInsert() throws {
             // given
             let key = UUID()
-            let value = UUID()
+            let value = ["id": UUID().uuidString, "name": "Tommy", "age": 34] as JSONObject
             
             // when
-            cache.insert(value, for: key)
+            try cache.insert(value, for: key)
+            let data = try JSONSerialization.data(withJSONObject: value, options: [])
             
             // then
-            XCTAssertEqual(store.entries[key] as? UUID, value, "primitive entered")
+            XCTAssertEqual(store.entries[key], data, "object inserted")
         }
         
-        func testObjectInsert(){
+        func testPrimitiveArrayInsert() throws {
             // given
             let key = UUID()
-            let value = MockObject(name: "Tommy")
+            let value = [5, 6, 7, 8] as [JSONObject]
             
             // when
-            cache.insert(value, for: key)
-            let entry = store.entries[key] as? MockObject
+            try cache.insert(value, for: key)
+            let data = try JSONSerialization.data(withJSONObject: value, options: [])
             
             // then
-            XCTAssertEqual(entry?.name, value.name)
-            XCTAssertEqual(entry?.id, value.id)
+            XCTAssertEqual(store.entries[key], data, "primitive array inserted")
         }
         
-        func testPrimitiveArrayInsert(){
+        func testObjectArrayInsert() throws {
             // given
             let key = UUID()
-            let value = [5, 6, 7, 8]
+            let value = [["id": UUID().uuidString, "name": "Tommy", "age": 34]] as [JSONObject]
             
             // when
-            cache.insert(value, for: key)
+            try cache.insert(value, for: key)
+            let data = try JSONSerialization.data(withJSONObject: value, options: [])
             
             // then
-            XCTAssertEqual(store.entries[key] as? [Int], value, "array inserted")
-        }
-        
-        func testObjectArrayInsert(){
-            // given
-            let key = UUID()
-            let value = [MockObject(name: "Tommy")]
-            
-            // when
-            cache[key] = value
-            
-            // then
-            XCTAssertEqual(cache[key] as? [MockObject], value)
+            XCTAssertEqual(store.entries[key], data, "object array inserted")
         }
     }
