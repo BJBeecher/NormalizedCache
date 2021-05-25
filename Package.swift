@@ -9,6 +9,6 @@ let package = Package(
     dependencies: [.package(name: "Cache", url: "https://github.com/BJBeecher/Cache.git", .upToNextMajor(from: "1.0.1"))],
     targets: [
         .target(name: "NormalizedCache", dependencies: ["Cache"]),
-        .testTarget(name: "NormalizedCacheTests", dependencies: ["NormalizedCache"])
+        .testTarget(name: "NormalizedCacheTests", dependencies: ["NormalizedCache", "Cache"])
     ]
 )

@@ -8,31 +8,31 @@
 import Foundation
 import Cache
 
-public final class NormalizedCache<Store: StoreInterface> {
+public final class NormalizedCache<Key: Hashable & Codable> {
     
-    let store : Store
+    let store : Cache<Key, Data>
     let composer : ComposerInterface
     
-    init(store: Store, composer: ComposerInterface) {
+    init(store: Cache<Key, Data>, composer: ComposerInterface) {
         self.store = store
         self.composer = composer
     }
     
-    public convenience init<Key: Hashable>() where Store == Cache<Key, Data> {
-        self.init(store: Cache<Key, Data>(), composer: Composer())
+    convenience init() {
+        self.init(store: .init(), composer: Composer())
     }
 }
 
 // json API
 
 public extension NormalizedCache {
-    func insert(_ json: JSONObject, for key: Store.Key) throws {
+    func insert(_ json: JSONObject, for key: Key) throws {
         let decomposedValue = try composer.decompose(json)
         let data = try JSONSerialization.data(withJSONObject: decomposedValue, options: [])
         store[key] = data
     }
     
-    func json(for key: Store.Key) throws -> JSONObject? {
+    func json(for key: Key) throws -> JSONObject? {
         guard let decomposedValue = store[key] else { return nil }
         let json = try JSONSerialization.jsonObject(with: decomposedValue, options: []) as! JSONObject
         let value = try composer.recompose(json)
@@ -47,12 +47,12 @@ public extension NormalizedCache {
 // data API
 
 public extension NormalizedCache {
-    func insert(_ data: Data, for key: Store.Key) throws {
+    func insert(_ data: Data, for key: Key) throws {
         let json = try JSONSerialization.jsonObject(with: data, options: []) as! JSONObject
         try insert(json, for: key)
     }
     
-    func data(for key: Store.Key) throws -> Data? {
+    func data(for key: Key) throws -> Data? {
         guard let json = try json(for: key) else { return nil }
         let data = try JSONSerialization.data(withJSONObject: json, options: [])
         return data
@@ -67,12 +67,12 @@ public extension NormalizedCache {
 // codable API
 
 public extension NormalizedCache {
-    func insert<Object: Codable>(_ object: Object, forKey key: Store.Key) throws {
+    func insert<Object: Codable>(_ object: Object, forKey key: Key) throws {
         let data = try JSONEncoder().encode(object)
         try insert(data, for: key)
     }
     
-    func object<Object: Codable>(forKey key: Store.Key) throws -> Object? {
+    func object<Object: Codable>(forKey key: Key) throws -> Object? {
         guard let data = try data(for: key) else { return nil }
         let object = try JSONDecoder().decode(Object.self, from: data)
         return object

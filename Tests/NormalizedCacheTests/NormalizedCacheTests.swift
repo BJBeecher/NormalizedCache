@@ -1,18 +1,6 @@
     import XCTest
     @testable import NormalizedCache
-    
-    final class MockEntryStore<Key: Hashable & Codable> : StoreInterface {
-        var entries = [Key : Data]()
-        
-        subscript(key: Key) -> Data? {
-            get {
-                entries[key]
-            }
-            set(newValue) {
-                entries[key] = newValue
-            }
-        }
-    }
+    import Cache
     
     final class MockComposer : ComposerInterface {
         func decompose(_ object: JSONObject) -> JSONObject {
@@ -32,7 +20,7 @@
 
     final class UpdateCacheTests: XCTestCase {
         
-        let store = MockEntryStore<UUID>()
+        let store = Cache<UUID, Data>()
         let composer = MockComposer()
         
         lazy var cache = NormalizedCache(store: store, composer: composer)
@@ -47,7 +35,7 @@
             let data = try JSONSerialization.data(withJSONObject: value, options: [])
             
             // then
-            XCTAssertEqual(store.entries[key], data, "object inserted")
+            XCTAssertEqual(store[key], data, "object inserted")
         }
         
         func testPrimitiveArrayInsert() throws {
@@ -60,7 +48,7 @@
             let data = try JSONSerialization.data(withJSONObject: value, options: [])
             
             // then
-            XCTAssertEqual(store.entries[key], data, "primitive array inserted")
+            XCTAssertEqual(store[key], data, "primitive array inserted")
         }
         
         func testObjectArrayInsert() throws {
@@ -73,6 +61,6 @@
             let data = try JSONSerialization.data(withJSONObject: value, options: [])
             
             // then
-            XCTAssertEqual(store.entries[key], data, "object array inserted")
+            XCTAssertEqual(store[key], data, "object array inserted")
         }
     }
