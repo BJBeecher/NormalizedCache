@@ -8,7 +8,7 @@
 import Foundation
 import Cache
 
-public final class NormalizedCache<Key: Hashable & Codable> {
+public final class NormalizedCache<Key: Hashable> {
     
     let store : Cache<Key, Data>
     let composer : ComposerInterface
