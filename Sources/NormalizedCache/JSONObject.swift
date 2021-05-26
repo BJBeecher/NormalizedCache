@@ -17,3 +17,8 @@ extension Float : JSONObject {}
 extension Int : JSONObject {}
 extension Array : JSONObject where Element == JSONObject {}
 extension Dictionary : JSONObject where Key == String, Value == JSONObject {}
+extension NSArray : JSONObject {}
+extension NSDictionary : JSONObject {}
+extension NSString : JSONObject {}
+extension NSNumber : JSONObject {}
+extension NSNull : JSONObject {}

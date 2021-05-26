@@ -23,7 +23,7 @@
         let store = Cache<UUID, Data>()
         let composer = MockComposer()
         
-        lazy var cache = NormalizedCache(store: store, composer: composer)
+        lazy var cache = NormalizedCache(store: store, composer: composer, serializer: DefaultSerializer())
         
         func testDictionaryInsert() throws {
             // given
@@ -62,5 +62,61 @@
             
             // then
             XCTAssertEqual(store[key], data, "object array inserted")
+        }
+        
+        func testObjectInsert() throws {
+            // given
+            let cache = NormalizedCache<UUID>()
+            let object = MockObject(name: "Tommy")
+            let key = UUID()
+            
+            // when
+            try cache.insert(object, forKey: key)
+            let returnedObject : MockObject? = try cache.object(forKey: key)
+            
+            // then
+            XCTAssertEqual(object, returnedObject)
+        }
+        
+        func testArrayOfObjectsInsert() throws {
+            // given
+            let cache = NormalizedCache<UUID>()
+            let object = [MockObject(name: "Tommy"), .init(name: "Matt")]
+            let key = UUID()
+            
+            // when
+            try cache.insert(object, forKey: key)
+            let returnedObject : [MockObject]? = try cache.object(forKey: key)
+            
+            // then
+            XCTAssertEqual(object, returnedObject)
+        }
+        
+        func testArrayOfPrimitivesInsert() throws {
+            // given
+            let cache = NormalizedCache<UUID>()
+            let object = [8, 7, 9] as [JSONObject]
+            let key = UUID()
+            
+            // when
+            try cache.insert(object, for: key)
+            let returnedObject = try cache.json(for: key) as? [Int]
+            
+            // then
+            XCTAssertEqual(object as? [Int], returnedObject)
+        }
+        
+        func testPrimitiveInsert() throws {
+            // given
+            let cache = NormalizedCache<UUID>()
+            let object = UUID()
+            let key = UUID()
+            
+            // when
+            try cache.insert(object, forKey: key)
+            let returnedObject : UUID? = try cache.object(forKey: key)
+            
+            // then
+            XCTAssertEqual(object, returnedObject)
         }
     }

@@ -25,7 +25,7 @@ final class ObjectValue : Codable {
 
 extension ObjectValue {
     func getJSON() throws -> [String : JSONObject]? {
-        try JSONSerialization.jsonObject(with: value.data, options: []) as? [String : JSONObject]
+        try JSONSerialization.jsonObject(with: value.data, options: [.fragmentsAllowed]) as? [String : JSONObject]
     }
     
     func update(with newObject: [String : JSONObject]) throws {

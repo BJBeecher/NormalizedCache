@@ -12,14 +12,16 @@ public final class NormalizedCache<Key: Hashable> {
     
     let store : Cache<Key, Data>
     let composer : ComposerInterface
+    let serializer : Serializer
     
-    init(store: Cache<Key, Data>, composer: ComposerInterface) {
+    init(store: Cache<Key, Data>, composer: ComposerInterface, serializer: Serializer) {
         self.store = store
         self.composer = composer
+        self.serializer = serializer
     }
     
     public convenience init() {
-        self.init(store: .init(), composer: Composer())
+        self.init(store: .init(), composer: Composer(), serializer: DefaultSerializer())
     }
 }
 
@@ -28,13 +30,13 @@ public final class NormalizedCache<Key: Hashable> {
 public extension NormalizedCache {
     func insert(_ json: JSONObject, for key: Key) throws {
         let decomposedValue = try composer.decompose(json)
-        let data = try JSONSerialization.data(withJSONObject: decomposedValue, options: [])
+        let data = try serializer.data(from: decomposedValue)
         store[key] = data
     }
     
     func json(for key: Key) throws -> JSONObject? {
-        guard let decomposedValue = store[key] else { return nil }
-        let json = try JSONSerialization.jsonObject(with: decomposedValue, options: []) as! JSONObject
+        guard let data = store[key] else { return nil }
+        let json = try serializer.json(from: data)
         let value = try composer.recompose(json)
         return value
     }
@@ -48,18 +50,18 @@ public extension NormalizedCache {
 
 public extension NormalizedCache {
     func insert(_ data: Data, for key: Key) throws {
-        let json = try JSONSerialization.jsonObject(with: data, options: []) as! JSONObject
+        let json = try serializer.json(from: data)
         try insert(json, for: key)
     }
     
     func data(for key: Key) throws -> Data? {
         guard let json = try json(for: key) else { return nil }
-        let data = try JSONSerialization.data(withJSONObject: json, options: [])
+        let data = try serializer.data(from: json)
         return data
     }
     
     func update(with data: Data) throws {
-        let json = try JSONSerialization.jsonObject(with: data, options: []) as! JSONObject
+        let json = try serializer.json(from: data)
         try update(with: json)
     }
 }
