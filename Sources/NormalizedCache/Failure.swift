@@ -9,5 +9,4 @@ import Foundation
 
 enum Failure : Error {
     case recomposition
-    case serializer
 }
