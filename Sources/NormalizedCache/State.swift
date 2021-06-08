@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct State<Key: Hashable> {
-    var decomposedEntries = [Key : Any]()
-    var objects = [String : [String : Any]]()
+struct State<EntryKey: Hashable> {
+    var entries = [EntryKey : Entry]()
+    var objects = [ObjectKey : Object]()
 }

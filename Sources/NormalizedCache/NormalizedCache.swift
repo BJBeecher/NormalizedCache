@@ -7,6 +7,7 @@
 
 import Foundation
 import Cache
+import Combine
 
 public final class NormalizedCache<Key: Hashable> {
     
@@ -34,7 +35,8 @@ public extension NormalizedCache {
         let data = try JSONEncoder().encode(object)
         let json = try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])
         let decomposed = decompose(json)
-        state.decomposedEntries[key] = decomposed
+        let entry = Entry(value: decomposed)
+        state.entries[key] = entry
     }
     
     /// Fetches object by transforming it from decomposed json -> composed json -> data -> object
@@ -42,13 +44,33 @@ public extension NormalizedCache {
     /// - Throws: during error in recomposition process
     /// - Returns: Codable object
     func object<Object: Codable>(forKey key: Key) throws -> Object? {
-        guard let decomposedJSON = state.decomposedEntries[key] else { return nil }
+        guard let decomposedJSON = state.entries[key] else { return nil }
         let recomposedJSON = try recompose(decomposedJSON)
         let data = try JSONSerialization.data(withJSONObject: recomposedJSON, options: [.fragmentsAllowed])
         let object = try JSONDecoder().decode(Object.self, from: data)
         return object
     }
     
+    func entryPublisher<Object: Codable>(forKey key: Key) -> AnyPublisher<Object, Error>? {
+        guard let entry = state.entries[key] else { return nil }
+        
+        return entry.$value
+            .tryMap(recompose)
+            .tryMap { try JSONSerialization.data(withJSONObject: $0, options: [.fragmentsAllowed]) }
+            .decode(type: Object.self, decoder: JSONDecoder())
+            .eraseToAnyPublisher()
+    }
+    
+    func objectPublisher<Object: Codable>(forId id: UUID) -> AnyPublisher<Object, Error>? {
+        let key = ObjectKey(id: id)
+        guard let object = state.objects[key] else { return nil }
+        
+        return object.$value
+            .tryMap(recompose)
+            .tryMap { try JSONSerialization.data(withJSONObject: $0, options: [.fragmentsAllowed]) }
+            .decode(type: Object.self, decoder: JSONDecoder())
+            .eraseToAnyPublisher()
+    }
     
     subscript<Object: Codable>(key: Key) -> Object? {
         get {
@@ -106,8 +128,7 @@ extension NormalizedCache {
             case let json as [Any]:
                 return try json.map(recompose)
                 
-            case let json as String:
-                guard json.contains("~>") else { return json }
+            case let json as ObjectKey:
                 if let object = state.objects[json] {
                     return try recompose(object)
                 } else {
@@ -122,9 +143,9 @@ extension NormalizedCache {
     /// Fetches object reference as string
     /// - Parameter object: JSON Dictionary
     /// - Returns: object reference
-    func key(for object: [String : Any]) -> String? {
-        if let id = object["id"] as? String, UUID(uuidString: id) != nil {
-            return "~>\(id)"
+    func key(for object: [String : Any]) -> ObjectKey? {
+        if let uuidString = object["id"] as? String, let id = UUID(uuidString: uuidString) {
+            return .init(id: id)
         } else {
             return nil
         }
@@ -134,12 +155,12 @@ extension NormalizedCache {
     /// - Parameters:
     ///   - new: Value to be inserted
     ///   - key: Key for value
-    func save(json new: [String : Any], for key: String) {
-        if let old = state.objects[key] {
-            let merged = old.merging(new) { old, new in new }
-            state.objects[key] = merged
+    func save(json value: [String : Any], for key: ObjectKey) {
+        if let object = state.objects[key] {
+            object.update(with: value)
         } else {
-            state.objects[key] = new
+            let object = Object(value: value)
+            state.objects[key] = object
         }
     }
 }
