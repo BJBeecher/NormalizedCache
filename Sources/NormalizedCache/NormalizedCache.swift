@@ -6,12 +6,13 @@
 //
 
 import Foundation
-import Cache
 import Combine
 
 public final class NormalizedCache<Key: Hashable> {
     
     var state : State<Key>
+    
+    var tokens = Set<AnyCancellable>()
     
     init(initialState state: State<Key>) {
         self.state = state
@@ -39,6 +40,24 @@ public extension NormalizedCache {
         state.entries[key] = entry
     }
     
+    func insertSubject<Object: Codable>(_ object: Object, forKey key: Key) throws -> CurrentValueSubject<Object, Never> {
+        try insert(object, forKey: key)
+        
+        let subject = CurrentValueSubject<Object, Never>(object)
+        
+        subject
+            .sink { [weak self] output in
+                do {
+                    try self?.insert(output, forKey: key)
+                } catch {
+                    print(error)
+                }
+            }
+            .store(in: &tokens)
+        
+        return subject
+    }
+    
     /// Fetches object by transforming it from decomposed json -> composed json -> data -> object
     /// - Parameter key: Hashable key
     /// - Throws: during error in recomposition process
@@ -51,25 +70,21 @@ public extension NormalizedCache {
         return object
     }
     
-    func entryPublisher<Object: Codable>(forKey key: Key) -> AnyPublisher<Object, Error>? {
-        guard let entry = state.entries[key] else { return nil }
+    func objectSubject<Object: Codable>(forKey key: Key) throws -> CurrentValueSubject<Object, Never>? {
+        guard let object : Object = try object(forKey: key) else { return nil }
+        let subject = CurrentValueSubject<Object, Never>(object)
         
-        return entry.$value
-            .tryMap(recompose)
-            .tryMap { try JSONSerialization.data(withJSONObject: $0, options: [.fragmentsAllowed]) }
-            .decode(type: Object.self, decoder: JSONDecoder())
-            .eraseToAnyPublisher()
-    }
-    
-    func objectPublisher<Object: Codable>(forId id: UUID) -> AnyPublisher<Object, Error>? {
-        let key = ObjectKey(id: id)
-        guard let object = state.objects[key] else { return nil }
+        subject
+            .sink { [weak self] output in
+                do {
+                    try self?.insert(output, forKey: key)
+                } catch {
+                    print(error)
+                }
+            }
+            .store(in: &tokens)
         
-        return object.$value
-            .tryMap(recompose)
-            .tryMap { try JSONSerialization.data(withJSONObject: $0, options: [.fragmentsAllowed]) }
-            .decode(type: Object.self, decoder: JSONDecoder())
-            .eraseToAnyPublisher()
+        return subject
     }
     
     subscript<Object: Codable>(key: Key) -> Object? {

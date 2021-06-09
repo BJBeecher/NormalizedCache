@@ -1,6 +1,5 @@
     import XCTest
     @testable import NormalizedCache
-    import Cache
     
     struct MockObject : Codable, Equatable {
         var id = UUID()

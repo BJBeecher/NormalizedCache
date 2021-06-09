@@ -7,9 +7,9 @@ let package = Package(
     name: "NormalizedCache",
     platforms: [.iOS(.v13)],
     products: [.library(name: "NormalizedCache", targets: ["NormalizedCache"])],
-    dependencies: [.package(name: "Cache", url: "https://github.com/BJBeecher/Cache.git", .upToNextMajor(from: "1.0.1"))],
+    dependencies: [],
     targets: [
-        .target(name: "NormalizedCache", dependencies: ["Cache"]),
-        .testTarget(name: "NormalizedCacheTests", dependencies: ["NormalizedCache", "Cache"])
+        .target(name: "NormalizedCache", dependencies: []),
+        .testTarget(name: "NormalizedCacheTests", dependencies: ["NormalizedCache"])
     ]
 )
