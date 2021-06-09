@@ -8,13 +8,23 @@
 import Foundation
 import Combine
 
-public final class NormalizedCache<Key: Hashable> {
-    var entries = [Key : CachedValue<Any>]()
+public final class NCClient<Key: Hashable> {
+    var entries : [Key : CachedValue<Any>]
+    let composer : Composer
+    
+    init(entries: [Key : CachedValue<Any>], composer: Composer){
+        self.entries = entries
+        self.composer = composer
+    }
+    
+    public convenience init(){
+        self.init(entries: .init(), composer: .shared)
+    }
 }
 
 // codable API
 
-public extension NormalizedCache {
+public extension NCClient {
     
     /// Inserts object into cache by transforming it from object -> data ->  composed native json (i.e. Any) -> decomposed json
     /// - Parameters:
@@ -33,5 +43,10 @@ public extension NormalizedCache {
     /// - Returns: Codable object
     func value(forKey key: Key) -> CachedValue<Any>? {
         entries[key]
+    }
+    
+    func object(forId id: UUID) -> CachedValue<[String : Any]>? {
+        let key = ObjectKey(id: id)
+        return composer.objects[key]
     }
 }

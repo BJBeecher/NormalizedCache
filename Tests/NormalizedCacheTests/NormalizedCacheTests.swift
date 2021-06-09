@@ -17,7 +17,7 @@
     final class UpdateCacheTests: XCTestCase {
         func testObjectInsert() throws {
             // given
-            let cache = NormalizedCache<UUID>()
+            let cache = NCClient<UUID>()
             let object = MockObject(name: "Tommy", subObject: .init(body: "IDK"))
             let key = UUID()
             
@@ -31,7 +31,7 @@
         
         func testArrayOfObjectsInsert() throws {
             // given
-            let cache = NormalizedCache<UUID>()
+            let cache = NCClient<UUID>()
             let object = [MockObject(name: "Tommy", subObject: .init(body: "Cool")), .init(name: "Matt", subObject: .init(body: "Truck"))]
             let key = UUID()
             
@@ -45,7 +45,7 @@
         
         func testPrimitiveInsert() throws {
             // given
-            let cache = NormalizedCache<UUID>()
+            let cache = NCClient<UUID>()
             let object = UUID()
             let key = UUID()
             
