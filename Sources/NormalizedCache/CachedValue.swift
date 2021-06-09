@@ -30,7 +30,7 @@ extension CachedValue where Value == Any {
 
 // API
 
-extension CachedValue {
+public extension CachedValue {
     func object<Object: Codable>() throws -> Object {
         try composer.build(from: value)
     }
