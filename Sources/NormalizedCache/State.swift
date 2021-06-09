@@ -8,6 +8,6 @@
 import Foundation
 
 struct State<EntryKey: Hashable> {
-    var entries = [EntryKey : Entry]()
-    var objects = [ObjectKey : Object]()
+    var entries = [EntryKey : CachedValue<Any>]()
+    var objects = [ObjectKey : CachedValue<[String : Any]>]()
 }

@@ -22,8 +22,8 @@
             let key = UUID()
             
             // when
-            try cache.insert(object, forKey: key)
-            let returnedObject : MockObject? = try cache.object(forKey: key)
+            let value = try cache.insert(object, forKey: key)
+            let returnedObject : MockObject = try value.object()
             
             // then
             XCTAssertEqual(object, returnedObject)
@@ -36,8 +36,8 @@
             let key = UUID()
             
             // when
-            try cache.insert(object, forKey: key)
-            let returnedObject : [MockObject]? = try cache.object(forKey: key)
+            let value = try cache.insert(object, forKey: key)
+            let returnedObject : [MockObject] = try value.object()
             
             // then
             XCTAssertEqual(object, returnedObject)
@@ -50,8 +50,8 @@
             let key = UUID()
             
             // when
-            try cache.insert(object, forKey: key)
-            let returnedObject : UUID? = try cache.object(forKey: key)
+            let value = try cache.insert(object, forKey: key)
+            let returnedObject : UUID = try value.object()
             
             // then
             XCTAssertEqual(object, returnedObject)
