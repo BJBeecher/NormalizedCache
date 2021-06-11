@@ -8,7 +8,7 @@
 import Foundation
 
 final class Composer {
-    var objects = [ObjectKey : CachedValue<[String : Any]>]()
+    var objects = [ObjectKey : CachedObject]()
     
     private init(){}
     
@@ -19,11 +19,11 @@ final class Composer {
 
 extension Composer {
     
-    func tearDown<Object: Codable>(object: Object) throws -> Any {
+    @discardableResult func tearDown<Object: Codable>(object: Object) throws -> DecomposedValue {
         let data = try JSONEncoder().encode(object)
         let json = try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])
         let decomposed = decompose(json)
-        return decomposed
+        return .init(json: decomposed)
     }
     
     func build<Object: Codable>(from value: Any) throws -> Object {
@@ -67,7 +67,7 @@ extension Composer {
                 return try json.map(recompose)
                 
             case let json as ObjectKey:
-                if let object = objects[json]?.value {
+                if let object = objects[json]?.json {
                     return try recompose(object)
                 } else {
                     throw Failure.recomposition
@@ -95,10 +95,9 @@ extension Composer {
     ///   - key: Key for value
     func save(json value: [String : Any], for key: ObjectKey) {
         if let object = objects[key] {
-            object.update(with: value)
+            object.merge(with: value)
         } else {
-            let value = CachedValue(value: value)
-            objects[key] = value
+            objects[key] = .init(json: value)
         }
     }
 }
