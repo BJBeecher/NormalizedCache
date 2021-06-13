@@ -43,6 +43,16 @@ public extension CachedValue where Value == [String : Any] {
     func update<Object: Codable>(with object: Object) throws {
         try composer.tearDown(object: object)
     }
+    
+    func object<Object: Codable>() throws -> Object {
+        try composer.build(from: value)
+    }
+    
+    func objectPublisher<Object: Codable>() -> AnyPublisher<Object, Error> {
+        $value
+            .tryMap(composer.build)
+            .eraseToAnyPublisher()
+    }
 }
 
 extension CachedValue where Value == [String : Any] {
