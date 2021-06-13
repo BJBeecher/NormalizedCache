@@ -9,10 +9,10 @@ import Foundation
 import Combine
 
 public final class NCClient<Key: Hashable> {
-    var entries : [Key : CachedEntry]
+    var entries : [Key : CachedValue<DecomposedValue>]
     let composer : Composer
     
-    init(entries: [Key : CachedEntry], composer: Composer){
+    init(entries: [Key : CachedValue<DecomposedValue>], composer: Composer){
         self.entries = entries
         self.composer = composer
     }
@@ -31,9 +31,9 @@ public extension NCClient {
     ///   - object: Codable object
     ///   - key: Hashable key
     /// - Throws: If error occurs in transformation process
-    func insert<Object: Codable>(_ object: Object, forKey key: Key) throws -> CachedEntry {
+    func insert<Object: Codable>(_ object: Object, forKey key: Key) throws -> CachedValue<DecomposedValue> {
         let decomposed = try composer.tearDown(object: object)
-        let value = CachedEntry(value: decomposed)
+        let value = CachedValue(value: decomposed)
         entries[key] = value
         return value
     }
@@ -42,11 +42,11 @@ public extension NCClient {
     /// - Parameter key: Hashable key
     /// - Throws: during error in recomposition process
     /// - Returns: Codable object
-    func value(forKey key: Key) -> CachedEntry? {
+    func value(forKey key: Key) -> CachedValue<DecomposedValue>? {
         entries[key]
     }
     
-    func object(forId id: UUID) -> CachedObject? {
+    func object(forId id: UUID) -> CachedValue<[String : Any]>? {
         let key = ObjectKey(id: id)
         return composer.objects[key]
     }

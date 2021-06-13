@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct DecomposedValue {
+public struct DecomposedValue {
     var json : Any
     let createdDt = Date()
 }

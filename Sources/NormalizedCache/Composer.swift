@@ -8,7 +8,7 @@
 import Foundation
 
 final class Composer {
-    var objects = [ObjectKey : CachedObject]()
+    var objects = [ObjectKey : CachedValue<[String : Any]>]()
     
     private init(){}
     
@@ -67,7 +67,7 @@ extension Composer {
                 return try json.map(recompose)
                 
             case let json as ObjectKey:
-                if let object = objects[json]?.json {
+                if let object = objects[json]?.value {
                     return try recompose(object)
                 } else {
                     throw Failure.recomposition
@@ -97,7 +97,7 @@ extension Composer {
         if let object = objects[key] {
             object.merge(with: value)
         } else {
-            objects[key] = .init(json: value)
+            objects[key] = .init(value: value)
         }
     }
 }
